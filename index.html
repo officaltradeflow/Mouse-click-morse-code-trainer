@@ -32,6 +32,16 @@
 
 <div id="target">Practice word: <b id="targetWord">SOS</b> <button id="newWord">New word</button></div>
 
+<div id="sliders">
+  Letter gap: <span id="lgVal">700</span>ms
+  <input type="range" id="lgSlider" min="200" max="2000" value="700">
+  <br>
+  Word gap: <span id="wgVal">1800</span>ms
+  <input type="range" id="wgSlider" min="500" max="4000" value="1800">
+</div>
+<style>#sliders{margin-top:10px;font-size:.85rem;opacity:.85;text-align:center;}
+#sliders input{width:200px;vertical-align:middle;}</style>
+
 <div id="pad">Click here (left = dot, right = dash)</div>
 
 <div id="output">
@@ -77,8 +87,10 @@ let fullMorse = '';
 let decoded = '';
 let letterTimer = null;
 let wordTimer = null;
-const LETTER_GAP = 700;
-const WORD_GAP = 1800;
+let LETTER_GAP = 700;
+let WORD_GAP = 1800;
+document.getElementById('lgSlider').oninput = e=>{ LETTER_GAP=+e.target.value; document.getElementById('lgVal').textContent=LETTER_GAP; };
+document.getElementById('wgSlider').oninput = e=>{ WORD_GAP=+e.target.value; document.getElementById('wgVal').textContent=WORD_GAP; };
 
 const WORDS = ['SOS','HELP','CODE','CLAUDE','MORSE','HI','TEST','OK','LOVE','FAST'];
 function pickWord(){ targetWordEl.textContent = WORDS[Math.floor(Math.random()*WORDS.length)]; }
@@ -128,6 +140,23 @@ function addSpace(){
   if(decoded.endsWith(' ')) return;
   decoded += ' ';
   renderText();
+  autoCheck();
+}
+
+function autoCheck(){
+  const target = targetWordEl.textContent;
+  const got = decoded.trim().toUpperCase();
+  if(!got) return;
+  if(got === target){
+    pickWord();
+    currentLetter=''; fullMorse=''; decoded='';
+    renderMorse(); renderText();
+  } else {
+    setTimeout(()=>{
+      currentLetter=''; fullMorse=''; decoded='';
+      renderMorse(); renderText();
+    }, 400);
+  }
 }
 
 function renderMorse(){
