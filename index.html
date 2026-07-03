@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mouse Morse Trainer</title>
+<style>
+  :root{--bg:#0f1115;--fg:#e6e6e6;--acc:#4cc9f0;--acc2:#f72585;--card:#1a1d24;}
+  *{box-sizing:border-box;}
+  body{background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;padding:30px;margin:0;}
+  h1{font-size:1.4rem;margin-bottom:4px;}
+  p.sub{opacity:.6;margin-top:0;font-size:.9rem;}
+  #pad{width:min(90vw,600px);height:220px;background:var(--card);border:2px dashed #333;border-radius:16px;
+       display:flex;align-items:center;justify-content:center;font-size:1.1rem;opacity:.8;cursor:crosshair;
+       user-select:none;transition:background .1s;}
+  #pad.active{background:#22262f;}
+  #output{width:min(90vw,600px);margin-top:16px;background:var(--card);border-radius:12px;padding:14px 18px;min-height:70px;}
+  #morse{font-family:monospace;font-size:1.3rem;letter-spacing:2px;color:var(--acc);word-break:break-all;}
+  #text{font-size:1.6rem;margin-top:6px;min-height:1.6rem;}
+  #controls{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  button{background:var(--card);color:var(--fg);border:1px solid #333;padding:8px 14px;border-radius:8px;cursor:pointer;}
+  button:hover{border-color:var(--acc);}
+  #legend{margin-top:20px;font-size:.85rem;opacity:.7;text-align:center;max-width:600px;}
+  #target{margin-top:10px;font-size:1rem;opacity:.85;}
+  #target b{color:var(--acc2);}
+  .dot{color:var(--acc);} .dash{color:var(--acc2);}
+</style>
+</head>
+<body>
+
+<h1>Mouse Morse Trainer</h1>
+<p class="sub">Left-click = dot (·) &nbsp; Right-click = dash (–) &nbsp; Pause to end letter, pause longer for space</p>
+
+<div id="target">Practice word: <b id="targetWord">SOS</b> <button id="newWord">New word</button></div>
+
+<div id="pad">Click here (left = dot, right = dash)</div>
+
+<div id="output">
+  <div id="morse"></div>
+  <div id="text">&nbsp;</div>
+</div>
+
+<div id="controls">
+  <button id="clear">Clear</button>
+  <button id="check">Check answer</button>
+</div>
+
+<div id="legend">
+  Letter gap: 700ms of no clicks finalizes current letter. Word gap: 1800ms adds a space.
+  Timing auto-adjusts as you go (adaptive), starting fairly forgiving.
+</div>
+
+<script>
+const MORSE = {
+'.-':'A','-...':'B','-.-.':'C','-..':'D','.':'E','..-.':'F','--.':'G','....':'H','..':'I',
+'.---':'J','-.-':'K','.-..':'L','--':'M','-.':'N','---':'O','.--.':'P','--.-':'Q','.-.':'R',
+'...':'S','-':'T','..-':'U','...-':'V','.--':'W','-..-':'X','-.--':'Y','--..':'Z',
+'-----':'0','.----':'1','..---':'2','...--':'3','....-':'4','.....':'5','-....':'6','--...':'7','---..':'8','----.':'9'
+};
+const REV = Object.fromEntries(Object.entries(MORSE).map(([k,v])=>[v,k]));
+
+const pad = document.getElementById('pad');
+const morseEl = document.getElementById('morse');
+const textEl = document.getElementById('text');
+const targetWordEl = document.getElementById('targetWord');
+
+let currentLetter = '';
+let fullMorse = '';
+let decoded = '';
+let letterTimer = null;
+let wordTimer = null;
+const LETTER_GAP = 700;
+const WORD_GAP = 1800;
+
+const WORDS = ['SOS','HELP','CODE','CLAUDE','MORSE','HI','TEST','OK','LOVE','FAST'];
+function pickWord(){ targetWordEl.textContent = WORDS[Math.floor(Math.random()*WORDS.length)]; }
+document.getElementById('newWord').onclick = pickWord;
+pickWord();
+
+function resetTimers(){
+  clearTimeout(letterTimer);
+  clearTimeout(wordTimer);
+  letterTimer = setTimeout(finalizeLetter, LETTER_GAP);
+  wordTimer = setTimeout(()=>{ finalizeLetter(); addSpace(); }, WORD_GAP);
+}
+
+function addSymbol(sym){
+  currentLetter += sym;
+  fullMorse += sym;
+  renderMorse();
+  resetTimers();
+  pad.classList.add('active');
+  setTimeout(()=>pad.classList.remove('active'),100);
+}
+
+function finalizeLetter(){
+  if(!currentLetter) return;
+  const letter = MORSE[currentLetter] || '?';
+  decoded += letter;
+  currentLetter = '';
+  fullMorse += ' ';
+  renderMorse();
+  renderText();
+}
+
+function addSpace(){
+  if(decoded.endsWith(' ')) return;
+  decoded += ' ';
+  renderText();
+}
+
+function renderMorse(){
+  morseEl.innerHTML = fullMorse
+    .split('')
+    .map(c=> c==='.'?`<span class="dot">·</span>`: c==='-'?`<span class="dash">–</span>`:' ')
+    .join('');
+}
+function renderText(){ textEl.textContent = decoded || '\u00A0'; }
+
+pad.addEventListener('contextmenu', e=> e.preventDefault());
+pad.addEventListener('mousedown', e=>{
+  if(e.button === 0) addSymbol('.');       // left click = dot
+  else if(e.button === 2) addSymbol('-');  // right click = dash
+});
+
+document.getElementById('clear').onclick = ()=>{
+  currentLetter=''; fullMorse=''; decoded='';
+  clearTimeout(letterTimer); clearTimeout(wordTimer);
+  renderMorse(); renderText();
+};
+
+document.getElementById('check').onclick = ()=>{
+  finalizeLetter();
+  const target = targetWordEl.textContent;
+  const got = decoded.trim().toUpperCase();
+  if(got === target) alert('Correct! 🎉');
+  else alert(`Not quite. You typed "${got}", target was "${target}".`);
+};
+</script>
+</body>
+</html>
