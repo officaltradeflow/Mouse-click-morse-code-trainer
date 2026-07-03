@@ -46,8 +46,14 @@
 
 <div id="legend">
   Letter gap: 700ms of no clicks finalizes current letter. Word gap: 1800ms adds a space.
-  Timing auto-adjusts as you go (adaptive), starting fairly forgiving.
 </div>
+
+<div id="chart"></div>
+<style>
+#chart{margin-top:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px;width:min(90vw,700px);}
+.chartItem{background:var(--card);border-radius:8px;padding:6px;text-align:center;font-size:.85rem;}
+.chartItem b{display:block;color:var(--acc);}
+</style>
 
 <script>
 const MORSE = {
@@ -57,6 +63,9 @@ const MORSE = {
 '-----':'0','.----':'1','..---':'2','...--':'3','....-':'4','.....':'5','-....':'6','--...':'7','---..':'8','----.':'9'
 };
 const REV = Object.fromEntries(Object.entries(MORSE).map(([k,v])=>[v,k]));
+document.getElementById('chart').innerHTML = Object.entries(REV).map(([l,m])=>
+  `<div class="chartItem"><b>${l}</b>${m.replace(/\./g,'·').replace(/-/g,'–')}</div>`
+).join('');
 
 const pad = document.getElementById('pad');
 const morseEl = document.getElementById('morse');
@@ -90,6 +99,19 @@ function addSymbol(sym){
   resetTimers();
   pad.classList.add('active');
   setTimeout(()=>pad.classList.remove('active'),100);
+  beep(sym==='.'?100:280);
+}
+
+let actx;
+function beep(ms){
+  actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+  const o = actx.createOscillator();
+  const g = actx.createGain();
+  o.frequency.value = 600;
+  o.connect(g); g.connect(actx.destination);
+  g.gain.setValueAtTime(0.2, actx.currentTime);
+  o.start();
+  o.stop(actx.currentTime + ms/1000);
 }
 
 function finalizeLetter(){
