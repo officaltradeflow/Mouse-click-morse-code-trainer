@@ -169,8 +169,8 @@ function renderText(){ textEl.textContent = decoded || '\u00A0'; }
 
 pad.addEventListener('contextmenu', e=> e.preventDefault());
 pad.addEventListener('mousedown', e=>{
-  if(e.button === 0) addSymbol('.');       // left click = dot
-  else if(e.button === 2) addSymbol('-');  // right click = dash
+  if(e.button === 0) addSymbol('-');       // left click = dash
+  else if(e.button === 2) addSymbol('.');  // right click = dot
 });
 
 document.getElementById('clear').onclick = ()=>{
